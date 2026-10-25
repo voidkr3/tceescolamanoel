@@ -1,0 +1,126 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TCE · Time de Contribuição Escolar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0D1B2A;--blue:#1B4DE4;--cyan:#00BFFF;--bg:#F2F4F7;--mut:#64748B;--line:#dde2ea}
+*{box-sizing:border-box}body{margin:0;font:400 15px/1.5 Poppins,Arial,sans-serif;color:var(--navy);background:var(--bg)}
+button,input,select,textarea{font:inherit}a{color:var(--blue)}
+.login{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.login aside{background:var(--navy);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:48px;position:relative;overflow:hidden}
+.login aside:after{content:"";position:absolute;right:-90px;bottom:-90px;width:320px;height:320px;background:var(--blue);clip-path:polygon(0 0,100% 0,100% 100%);opacity:.9}
+.login aside h1{font-size:2.6rem;line-height:1.1;margin:24px 0 8px;font-weight:700}.login aside h1 b{color:var(--cyan)}
+.login aside p{letter-spacing:.25em;font-size:.8rem;color:#9fb0c8}
+.login main{display:flex;align-items:center;justify-content:center;padding:24px}
+.box{width:100%;max-width:360px;display:grid;gap:12px}.box h2{margin:0 0 4px}
+label{display:grid;gap:4px;font-weight:500;font-size:.85rem}
+input,select,textarea{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);width:100%}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+.btn{background:var(--blue);color:#fff;border:0;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer}.btn:hover{background:#1640bf}
+.btn.ghost{background:transparent;color:var(--blue);border:1px solid var(--blue)}.btn.red{background:#c0392b}
+.err{color:#c0392b;font-size:.85rem;min-height:1.2em}
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+nav{background:var(--navy);color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+nav .brand{display:flex;gap:10px;align-items:center;padding:0 8px 18px;font-weight:700;line-height:1.1}nav .brand b{color:var(--cyan)}
+nav button{background:none;border:0;color:#c8d3e3;text-align:left;padding:10px 12px;border-radius:8px;cursor:pointer}
+nav button.on{background:var(--blue);color:#fff;font-weight:600}nav button:hover:not(.on){background:#16283b}
+nav .who{margin-top:auto;font-size:.8rem;color:#9fb0c8;padding:8px}
+section.main{padding:28px;max-width:1100px;width:100%}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px}.top h2{margin:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.card{background:#fff;border-radius:12px;padding:16px;border-left:4px solid var(--blue)}.card b{font-size:2rem;display:block}.card span{color:var(--mut);font-size:.85rem}
+.tw{background:#fff;border-radius:12px;overflow-x:auto}table{border-collapse:collapse;width:100%}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:.9rem;vertical-align:top}th{color:var(--mut);font-weight:500}
+tr.click{cursor:pointer}tr.click:hover{background:#f7f9fc}
+.tag{background:#e6ecfd;color:var(--blue);padding:2px 10px;border-radius:99px;font-size:.78rem;white-space:nowrap}
+.empty{padding:28px;color:var(--mut);text-align:center}
+dialog{border:0;border-radius:14px;padding:22px;width:min(520px,94vw)}dialog::backdrop{background:#0d1b2a99}
+dialog form{display:grid;gap:12px}.row{display:flex;gap:8px;justify-content:flex-end}
+@media(max-width:760px){.login{grid-template-columns:1fr}.login aside{display:none}.shell{grid-template-columns:1fr}nav{flex-direction:row;flex-wrap:wrap}nav .who{display:none}}
+</style></head><body><div id="app"></div>
+<script>
+const LOGO=(s=44)=>`<svg width="${s}" height="${s}" viewBox="0 0 100 100" fill="none"><path d="M12 56A38 38 0 1 1 88 56" stroke="#00BFFF" stroke-width="7" stroke-linecap="round"/><circle cx="50" cy="32" r="9" fill="#fff"/><circle cx="30" cy="40" r="7" fill="#fff"/><circle cx="70" cy="40" r="7" fill="#fff"/><path d="M38 70V50h24v20M20 56l30 32 30-32-8-6-22 22-22-22z" fill="#1B4DE4"/></svg>`;
+const AREAS=['Operações, Logística e Infraestrutura','Projetos, Eventos e Avisos','Design, Comunicação e Mídia'];
+const ROLES={principal:'Coordenação Principal',secundaria:'Coordenação Secundária',voluntario:'Voluntário',escola:'Escola (solicitante)'};
+const TS=['pendente','em andamento','concluída'], RS=['pendente','aprovada','aprovada com condições','recusada'];
+const C=['principal','secundaria'], ALL=[...C,'voluntario'];
+const V={
+ dash:{t:'Painel',r:ALL},
+ tasks:{t:'Tarefas',r:ALL,w:C,cols:['title','area','assignee','due_date','status'],f:[['title','Título'],['description','Descrição','textarea'],['area','Área','select',AREAS],['assignee_id','Responsável','user'],['due_date','Prazo','date'],['status','Status','select',TS]]},
+ notices:{t:'Avisos',r:[...ALL,'escola'],w:C,cols:['title','body'],f:[['title','Título'],['body','Mensagem','textarea']]},
+ requests:{t:'Solicitações',r:[...C,'escola'],w:[...C,'escola'],cols:['title','requester','event_date','area','status'],f:[['title','Evento ou serviço'],['requester','Solicitante'],['objective','Objetivo','textarea'],['event_date','Data prevista','date'],['support_type','Tipo de apoio'],['details','Descrição do serviço','textarea'],['area','Área responsável','select',AREAS],['status','Viabilidade','select',RS],['notes','Condições','textarea']]},
+ events:{t:'Eventos',r:ALL,w:C,cols:['title','event_date','place','status','chk'],f:[['title','Nome do evento'],['event_date','Data','date'],['place','Local'],['responsible','Responsável'],['status','Status','select',['planejamento','em execução','encerrado']],['objective','Objetivo','textarea'],['results','Resultados','textarea'],['difficulties','Dificuldades','textarea'],['lessons','Aprendizados','textarea'],['attendance','Participantes','number']]},
+ incidents:{t:'Ocorrências',r:ALL,w:ALL,cols:['title','level','status','created_at'],f:[['title','Resumo'],['description','Descrição','textarea'],['level','Nível','select',['1','2','3']],['status','Situação','select',['aberta','em apuração','resolvida']],['measures','Medidas','textarea']]},
+ minutes:{t:'Atas',r:C,w:C,cols:['title','meeting_date','decisions'],f:[['title','Reunião'],['meeting_date','Data','date'],['participants','Participantes','textarea'],['decisions','Decisões','textarea'],['pending','Pendências','textarea']]},
+ candidates:{t:'Seleção',r:C,w:C,cols:['name','grade','area','score','decision'],f:[['name','Nome'],['grade','Turma'],['area','Interesse','select',AREAS],['s1','Responsabilidade','number'],['s2','Comunicação','number'],['s3','Motivação','number'],['s4','Disponibilidade','number'],['s5','Organização','number'],['s6','Técnico','number'],['decision','Decisão','select',['em análise','aprovado','não selecionado']],['notes','Notas','textarea']]},
+ users:{t:'Equipe',r:C,w:['principal'],cols:['name','email','role','area','active'],f:[['name','Nome'],['email','E-mail','email'],['password','Senha','password'],['role','Função','select',Object.keys(ROLES)],['area','Área','select',AREAS],['active','Ativo','bool']]}
+};
+const L={level:'Nível',created_at:'Registrada',place:'Local',chk:'Progresso',score:'Pts',grade:'Turma',decision:'Decisão'};
+const CO=new Set(['requests:area','requests:status','requests:notes','incidents:level','incidents:status','incidents:measures']);
+const CK={'A. Antes':['Aprovada','Autorizado','Horários confirmados','Materiais'],
+'B. Montagem':['Saídas desobstruídas','Materiais colocados','Sinalização'],
+'C. Conferência':['Responsável informado','Pendências resolvidas'],
+'D. Execução':['Funções claras','Ocorrências registradas'],
+'E. Desmontagem':['Itens devolvidos','Danos registrados','Espaço pronto']};
+const ITEMS=Object.entries(CK).flatMap(([g,a])=>a.map(i=>g[0]+i)),TOTAL=ITEMS.length,done=r=>ITEMS.filter(i=>r.checklist?.[i]).length;
+const W=[25,20,20,15,10,10],score=r=>W.reduce((t,w,i)=>t+w*(+r['s'+(i+1)]||0)/10,0);
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api=async(p,m='GET',b)=>{const r=await fetch('/api/'+p,{method:m,headers:{'Content-Type':'application/json'},body:b&&JSON.stringify(b)});const d=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(d.error||'Erro'),{status:r.status});return d};
+let me,view='dash',team=[];
+const fmt=(k,v)=>v==null||v===''?'—':k==='role'?ROLES[v]:k==='active'?(v?'✓':'✗'):/date|_at/.test(k)?new Date(v).toLocaleDateString('pt-BR',{timeZone:'UTC'}):['status','decision'].includes(k)?`<span class="tag">${esc(v)}</span>`:esc(String(v).slice(0,90));
+function loginUI(setup){
+ $('#app').innerHTML=`<div class="login"><aside>${LOGO(80)}<h1>TIME DE<br><b>CONTRIBUIÇÃO</b><br>ESCOLAR</h1><p>JUNTOS, TRANSFORMAMOS NOSSA ESCOLA</p></aside>
+ <main><form class="box" id="lf"><h2>${setup?'Primeiro acesso':'Entrar'}</h2>
+ ${setup?'<label>Chave<input name="key" required></label><label>Nome<input name="name" required></label>':''}
+ <label>E-mail<input name="email" type="email" required></label>
+ <label>Senha<input name="password" type="password" required minlength="8"></label>
+ <div class="err" id="er"></div><button class="btn">${setup?'Criar':'Entrar'}</button>
+ <a href="#" id="sw">${setup?'Voltar':'1º acesso'}</a></form></main></div>`;
+ $('#sw').onclick=e=>{e.preventDefault();loginUI(!setup)};
+ $('#lf').onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));try{if(setup)await api('setup','POST',b);await api('login','POST',b);boot()}catch(x){$('#er').textContent=x.message}};
+}
+async function boot(){try{me=await api('me')}catch{return loginUI()}
+ if(C.includes(me.role))team=(await api('users')).filter(u=>u.role!=='escola');
+ view=me.role==='escola'?'requests':'dash';shell();
+ if(!me.terms_at&&me.role!=='escola')terms();
+}
+function shell(){const items=Object.keys(V).filter(k=>V[k].r.includes(me.role));
+ $('#app').innerHTML=`<div class="shell"><nav><div class="brand">${LOGO(40)}<span>TCE<br><b>Escolar</b></span></div>
+ ${items.map(k=>`<button data-v="${k}" class="${k===view?'on':''}">${V[k].t}</button>`).join('')}
+ <div class="who">${esc(me.name.split(' ')[0])}<br>${ROLES[me.role]}<br><a href="#" id="out" style="color:#00BFFF">Sair</a></div></nav><section class="main" id="m"></section></div>
+ <dialog id="dg"></dialog>`;
+ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{view=b.dataset.v;render()});
+ $('#out').onclick=async e=>{e.preventDefault();await api('logout');loginUI()};
+ render();
+}
+function checklist(r){const dg=$('#dg'),ck={...(r.checklist||{})};
+ dg.innerHTML=`<form><h3>Checklist</h3>${Object.entries(CK).map(([g,a])=>`<b>${g}</b>${a.map((i,j)=>`<label style="display:flex;gap:8px;font:inherit"><input type="checkbox" style="width:auto" data-i="${g[0]+(j+1)}" ${ck[g[0]+(j+1)]?'checked':''}>${i}</label>`).join('')}`).join('')}<div class="row"><button type="button" class="btn ghost" id="cn">Fechar</button><button class="btn">Salvar</button></div></form>`;
+ dg.showModal();$('#cn').onclick=()=>dg.close();
+ dg.querySelector('form').onsubmit=async e=>{e.preventDefault();dg.querySelectorAll('[data-i]').forEach(c=>ck[c.dataset.i]=c.checked);try{await api('events/'+r.id,'PATCH',{checklist:JSON.stringify(ck)});dg.close();render()}catch(x){alert(x.message)}};
+}
+function terms(){const dg=$('#dg');dg.oncancel=e=>e.preventDefault();
+ dg.innerHTML=`<form><h3>Termo de compromisso</h3><p>Minha participação no TCE é voluntária, sem vínculo empregatício. Comprometo-me a respeitar colegas, preservar patrimônio, proteger dados e comunicar riscos. Meus estudos e descanso continuam sendo prioridade.</p><label style="display:flex;gap:8px"><input type="checkbox" style="width:auto" required>Li e aceito</label><button class="btn">Continuar</button></form>`;
+ dg.showModal();dg.oncancel=null;dg.querySelector('form').onsubmit=async e=>{e.preventDefault();await api('terms','POST');me.terms_at=1;dg.close()};
+}
+async function render(){const m=$('#m'),c=V[view];try{
+ if(view==='dash'){const d=await api('dashboard');const n=s=>d.tasks.find(t=>t.status===s)?.n||0;
+  m.innerHTML=`<div class="top"><h2>Olá, ${esc(me.name.split(' ')[0])}</h2></div><div class="cards">
+  <div class="card"><b>${n('pendente')}</b><span>Pendentes</span></div><div class="card"><b>${n('em andamento')}</b><span>Andamento</span></div><div class="card"><b>${n('concluída')}</b><span>Concluídas</span></div>
+  ${d.pending!=null?`<div class="card"><b>${d.pending}</b><span>Solicitações</span></div><div class="card"><b>${d.members}</b><span>Membros</span></div><div class="card"><b>${d.open}</b><span>Ocorrências</span></div>`:''}</div>`;return}
+ const rows=await api(view),canW=c.w?.includes(me.role);
+ const cols=me.role==='escola'&&view==='requests'?['title','event_date','status']:c.cols;
+ if(view==='candidates'){rows.forEach(r=>r.score=score(r));rows.sort((a,b)=>b.score-a.score)}
+ m.innerHTML=`<div class="top"><h2>${c.t}</h2>${canW?'<button class="btn" id="nw">Novo</button>':''}</div>${me.role==='escola'&&view==='requests'?'<p style="margin:0 0 12px">Preencha sua solicitação. A coordenação responde em Viabilidade.</p>':''}<div class="tw">${rows.length?`<table><tr>${cols.map(k=>`<th>${L[k]||k}</th>`).join('')}</tr>${rows.map((r,i)=>`<tr class="${canW?'click':''}" data-i="${i}">${cols.map(k=>{const v=k==='chk'?`<button class="btn ghost" data-k="${i}" style="padding:4px 10px;font-size:.8rem">${done(r)}/${TOTAL}</button>`:k==='score'?r.score.toFixed(1):fmt(k,r[k]);return `<td>${v}</td>`}).join('')}</tr>`).join('')}</table>`:'<div class="empty">Vazio</div>'}</div>`;
+ if(canW)$('#nw').onclick=()=>form();
+ if(canW)m.querySelectorAll('tr.click').forEach(tr=>tr.onclick=()=>form(rows[tr.dataset.i]));
+ m.querySelectorAll('[data-k]').forEach(b=>b.onclick=e=>{e.stopPropagation();checklist(rows[b.dataset.k])});
+}catch(x){if(x.status===401)loginUI();else $('#m').innerHTML=`<div class="empty">Erro: ${esc(x.message)}</div>`}
+}
+function form(r){const c=V[view],dg=$('#dg'),isC=C.includes(me.role);
+ const inp=([k,l,t,o])=>{const v=r?.[k]??'';const ctl=t==='textarea'?`<textarea name="${k}" rows="3">${esc(v)}</textarea>`:t==='select'?`<select name="${k}"><option>—</option>${o.map(x=>`<option value="${x}" ${x==v?'selected':''}>${ROLES[x]||x}</option>`).join('')}</select>`:t==='user'?`<select name="${k}"><option>—</option>${team.map(u=>`<option value="${u.id}" ${u.id==v?'selected':''}>${esc(u.name)}</option>`).join('')}</select>`:t==='bool'?`<select name="${k}"><option value="true">Sim</option><option value="false" ${r&&!r[k]?'selected':''}>Não</option></select>`:`<input name="${k}" type="${t||'text'}" value="${esc(String(v).slice(0,10))}" ${['title','name','email'].includes(k)?'required':''}>`;return `<label>${l}${ctl}</label>`};
+ dg.innerHTML=`<form><h3>${r?'Editar':'Novo'}</h3>${c.f.filter(x=>isC||!CO.has(view+':'+x[0])).map(inp).join('')}<div class="row">${r&&me.role==='principal'?'<button type="button" class="btn red" id="dl">Excluir</button>':''}<button type="button" class="btn ghost" id="cn">Cancelar</button><button class="btn">Salvar</button></div></form>`;
+ dg.showModal();$('#cn').onclick=()=>dg.close();
+ if($('#dl'))$('#dl').onclick=async()=>{if(confirm('Excluir?')){try{await api(view+'/'+r.id,'DELETE');dg.close();render()}catch(x){alert(x.message)}}};
+ dg.querySelector('form').onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));if(b.active!=null)b.active=b.active==='true';if(view==='users'&&!b.password)delete b.password;try{await api(view+(r?'/'+r.id:''),r?'PATCH':'POST',b);dg.close();if(view==='users')team=(await api('users')).filter(u=>u.role!=='escola');render()}catch(x){alert(x.message)}};
+}
+boot();
+</script></body></html>
